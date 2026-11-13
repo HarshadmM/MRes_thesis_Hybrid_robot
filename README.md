@@ -14,11 +14,11 @@ MRes_thesis_Hybrid_robot/
 The repository contains two main software components:
 
 - **Python controller (`xbox_control.py`):** Xbox-controller input, serial communication, motor commands, CSV logging and live visualisation.
-- **Arduino firmware (`Arduino_firmware.ino`):** Stepper-motor actuation, servo control and serial command handling.
+- **Arduino firmware (`Arduino_firmware.ino`):** Four-channel stepper-motor actuation and serial command handling.
 
 ## System overview
 
-The Python application reads inputs from an Xbox-compatible controller and transmits movement and speed commands to the Arduino over a serial connection. The Arduino firmware interprets these commands and controls the stepper-motor drivers. It also includes a servo-control routine.
+The Python application reads inputs from an Xbox-compatible controller and transmits movement and speed commands to the Arduino over a serial connection. The Arduino firmware interprets these commands and controls four stepper-motor channels through the RAMPS 1.4 driver interface.
 
 The Python application additionally provides CSV logging and live visualisation infrastructure for incoming telemetry.
 
@@ -40,8 +40,9 @@ pip install pygame pyserial matplotlib
 ### Arduino
 
 - Arduino IDE
-- `Servo.h` library
-- Compatible Arduino board and stepper-motor drivers
+- Arduino Mega 2560
+- RAMPS 1.4 board
+- Compatible stepper-motor drivers
 
 The firmware uses RAMPS-style stepper-driver pin assignments.
 
@@ -70,7 +71,18 @@ Adapt these settings to the computer, controller, board and wiring in use.
 | B | Stop CSV recording |
 | Start | Exit application |
 
-The Arduino firmware receives serial commands for motor movement, speed adjustment and servo operation.
+The Arduino firmware supports four stepper-motor channels:
+
+| Motor | Serial commands | Function |
+|---|---|---|
+| X | `U`, `D`, `S` | Up, down, stop |
+| Y | `R`, `L`, `W` | Right, left, stop |
+| Z | `P`, `N` | Enable and rotate, disable |
+| E0 | `F`, `B`, `H` | Forward, backward, stop |
+
+The `V` command adjusts the stepping interval, accepting values between 150 and 5000 microseconds.
+
+The E0 channel is available through the Arduino serial interface; its commands are not currently assigned to Xbox-controller inputs in the supplied Python script.
 
 ## Data logging and visualisation
 
@@ -89,8 +101,7 @@ The following limitations apply to the supplied software version:
 - The Arduino firmware returns placeholder zero-valued telemetry in response to `Q`.
 - The firmware acknowledges `T` and `Z` without performing any operation. These are inactive commands; no load cell was used in the project, and no load-cell taring or position zeroing was implemented.
 - The Python speed presets include `100` microseconds, while the firmware accepts values between `150` and `5000` microseconds. The `100` microsecond preset is therefore rejected.
-- The Python interface includes a servo mapping in its controller description, but the supplied Python script does not currently issue the servo command. The Arduino firmware contains the corresponding servo routine.
-- The servo routine uses a blocking delay, temporarily pausing the Arduino main loop.
+- The fourth motor channel (E0) is implemented in the Arduino firmware but is not currently mapped to the Xbox-controller interface in the supplied Python script.
 
 These limitations describe the supplied code version and should be updated if the software changes.
 
