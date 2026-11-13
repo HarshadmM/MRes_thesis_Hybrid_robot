@@ -1,25 +1,24 @@
 # Hybrid Eversion–Continuum Robot: Control Software
 
-This repository contains the software developed for human-operated control of the hybrid eversion–continuum robotic platform as part of an MRes research project at Imperial College London.
+This repository contains the control software developed for the hybrid eversion–continuum robotic platform as part of an MRes research project at Imperial College London.
 
 ## Repository structure
 
 ```text
-hybrid-eversion-continuum-robot/
+MRes_thesis_Hybrid_robot/
 ├── README.md
-├── python_controller/
-│   ├── README.md
-│   └── xbox_control.py
-└── arduino_firmware/
-    ├── README.md
-    └── robot_control.ino
+├── xbox_control.py
+└── Arduino_firmware.ino
 ```
+
+The repository contains two main software components:
+
+- **Python controller (`xbox_control.py`):** Xbox-controller input, serial communication, motor commands, CSV logging and live visualisation.
+- **Arduino firmware (`Arduino_firmware.ino`):** Stepper-motor actuation, servo control and serial command handling.
 
 ## System overview
 
-The control system consists of a Python-based operator interface and Arduino firmware communicating over a serial connection.
-
-The Python application reads inputs from an Xbox-compatible controller and transmits movement and speed commands to the Arduino. The firmware interprets these commands and controls the stepper-motor drivers. It also includes a servo-control routine.
+The Python application reads inputs from an Xbox-compatible controller and transmits movement and speed commands to the Arduino over a serial connection. The Arduino firmware interprets these commands and controls the stepper-motor drivers. It also includes a servo-control routine.
 
 The Python application additionally provides CSV logging and live visualisation infrastructure for incoming telemetry.
 
@@ -32,7 +31,7 @@ The Python application additionally provides CSV logging and live visualisation 
 - `pyserial`
 - `matplotlib`
 
-Install the dependencies using:
+Install dependencies using:
 
 ```bash
 pip install pygame pyserial matplotlib
@@ -48,19 +47,17 @@ The firmware uses RAMPS-style stepper-driver pin assignments.
 
 ## Configuration
 
-Before running the software, check the following:
+Before running the software, check:
 
-- Serial port: `COM8` in the supplied Python script.
-- Baud rate: `115200`.
+- Serial port (`COM8` in the supplied Python script).
+- Baud rate (`115200`).
 - Xbox controller axis and button mappings.
 - Arduino stepper-driver pin assignments.
 - Motor directions and physical wiring.
 
-These settings may need to be adapted to the hardware and computer being used.
+Adapt these settings to the computer, controller, board and wiring in use.
 
 ## Control interface
-
-The Python application supports the following controller inputs:
 
 | Controller input | Function |
 |---|---|
@@ -73,13 +70,13 @@ The Python application supports the following controller inputs:
 | B | Stop CSV recording |
 | Start | Exit application |
 
-The Arduino firmware accepts serial commands for motor movement, speed adjustment and servo operation.
+The Arduino firmware receives serial commands for motor movement, speed adjustment and servo operation.
 
 ## Data logging and visualisation
 
 The Python application includes functionality for:
 
-- Requesting telemetry from the Arduino at regular intervals.
+- Periodic telemetry requests to the Arduino.
 - Recording received values to timestamped CSV files.
 - Displaying selected telemetry channels in live plots.
 
@@ -89,13 +86,13 @@ The supplied firmware currently returns placeholder zero-valued telemetry. Conse
 
 The following limitations apply to the supplied software version:
 
-- The Arduino firmware returns placeholder zero-valued telemetry in response to `Q`. No meaningful sensor measurements are available through this implementation.
+- The Arduino firmware returns placeholder zero-valued telemetry in response to `Q`.
 - The firmware acknowledges `T` and `Z` without performing any operation. These are inactive commands; no load cell was used in the project, and no load-cell taring or position zeroing was implemented.
 - The Python speed presets include `100` microseconds, while the firmware accepts values between `150` and `5000` microseconds. The `100` microsecond preset is therefore rejected.
 - The Python interface includes a servo mapping in its controller description, but the supplied Python script does not currently issue the servo command. The Arduino firmware contains the corresponding servo routine.
 - The servo routine uses a blocking delay, temporarily pausing the Arduino main loop.
 
-These limitations describe the supplied code version and should be updated if the software is subsequently modified.
+These limitations describe the supplied code version and should be updated if the software changes.
 
 ## Safety
 
