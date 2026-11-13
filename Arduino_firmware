@@ -1,4 +1,4 @@
-#include <Servo.h>
+
 #define X_STEP_PIN 54
 #define X_DIR_PIN 55
 #define X_EN_PIN 38
@@ -11,19 +11,23 @@
 #define Z_DIR_PIN 48
 #define Z_EN_PIN 62
 
-Servo myServo;
+#define E0_STEP_PIN 26
+#define E0_DIR_PIN 28
+#define E0_ENABLE_PIN 24
 
 int stepDelay = 700;
 
 char xCmd = 'S';
 char yCmd = 'W';
 char zCmd = 'N';
+char e0Cmd = 'H';
 
-unsigned long lastXStep =0;
-unsigned long lastYStep =0;
-unsigned long lastZStep =0;
+unsigned long lastXStep = 0;
+unsigned long lastYStep = 0;
+unsigned long lastZStep = 0;
+unsigned long lastE0Step = 0;
 
-void setup(){
+void setup() {
   Serial.begin(115200);
 
   pinMode(X_STEP_PIN, OUTPUT);
@@ -38,14 +42,15 @@ void setup(){
   pinMode(Z_DIR_PIN, OUTPUT);
   pinMode(Z_EN_PIN, OUTPUT);
 
-  // Enable stepper drivers
+  pinMode(E0_STEP_PIN, OUTPUT);
+  pinMode(E0_DIR_PIN, OUTPUT);
+  pinMode(E0_ENABLE_PIN, OUTPUT);
+
+  // Enable/disable stepper drivers
   digitalWrite(X_EN_PIN, LOW);
   digitalWrite(Y_EN_PIN, LOW);
   digitalWrite(Z_EN_PIN, HIGH);
-
-  Serial.println("Arduino ready");
-  myServo.attach(11);      // SERVO0 on RAMPS
-  myServo.write(0);        // Start at 0°
+  digitalWrite(E0_ENABLE_PIN, LOW);
 }
 
 void loop() {
@@ -54,37 +59,49 @@ void loop() {
   runMotorX();
   runMotorY();
   runMotorZ();
+  runMotorE0();
 }
 
 void readSerialCommands() {
   while (Serial.available()) {
     char c = Serial.read();
 
+    // X motor
     if (c == 'U' || c == 'D' || c == 'S') {
       xCmd = c;
     }
 
+    // Y motor
     else if (c == 'R' || c == 'L' || c == 'W') {
       yCmd = c;
     }
 
+    // Z motor
     else if (c == 'P') {
       zCmd = 'P';
-      digitalWrite(Z_EN_PIN, LOW);    // Enable Z driver
+      digitalWrite(Z_EN_PIN, LOW);
     }
 
     else if (c == 'N') {
       zCmd = 'N';
-      digitalWrite(Z_EN_PIN, HIGH);   // Disable Z driver
+      digitalWrite(Z_EN_PIN, HIGH);
     }
 
+    // E0 motor
+    else if (c == 'F' || c == 'B' || c == 'H') {
+      e0Cmd = c;
+    }
+
+    // Speed control
     else if (c == 'V') {
       int newSpeed = Serial.parseInt();
+
       if (newSpeed >= 150 && newSpeed <= 5000) {
         stepDelay = newSpeed;
       }
     }
 
+    // Placeholder commands
     else if (c == 'T') {
       Serial.println("Tare ignored");
     }
@@ -93,14 +110,9 @@ void readSerialCommands() {
       Serial.println("Zero ignored");
     }
 
+    // Telemetry
     else if (c == 'Q') {
       Serial.println("# LIVE\t0\t0\t0\t0\t0\t0");
-    }
-    else if (c == 'M') {
-  Serial.println("M received");
-  myServo.write(90);
-  delay(500);
-  myServo.write(0);
     }
   }
 }
@@ -108,13 +120,9 @@ void readSerialCommands() {
 void runMotorX() {
   if (xCmd == 'S') return;
 
-  if (xCmd == 'U') {
-    digitalWrite(X_DIR_PIN, HIGH);
-  } else if (xCmd == 'D') {
-    digitalWrite(X_DIR_PIN, LOW);
-  }
+  digitalWrite(X_DIR_PIN, xCmd == 'U' ? HIGH : LOW);
 
-  if (micros() - lastXStep >= stepDelay) {
+  if (micros() - lastXStep >= (unsigned long)stepDelay) {
     stepOnce(X_STEP_PIN);
     lastXStep = micros();
   }
@@ -123,27 +131,33 @@ void runMotorX() {
 void runMotorY() {
   if (yCmd == 'W') return;
 
-  if (yCmd == 'R') {
-    digitalWrite(Y_DIR_PIN, HIGH);
-  } else if (yCmd == 'L') {
-    digitalWrite(Y_DIR_PIN, LOW);
-  }
+  digitalWrite(Y_DIR_PIN, yCmd == 'R' ? HIGH : LOW);
 
-  if (micros() - lastYStep >= stepDelay) {
+  if (micros() - lastYStep >= (unsigned long)stepDelay) {
     stepOnce(Y_STEP_PIN);
     lastYStep = micros();
   }
 }
+
 void runMotorZ() {
   if (zCmd == 'N') return;
 
-  // Choose the direction of the motor
   digitalWrite(Z_DIR_PIN, HIGH);
-  // Change HIGH to LOW if it spins the wrong way
 
-  if (micros() - lastZStep >= stepDelay) {
+  if (micros() - lastZStep >= (unsigned long)stepDelay) {
     stepOnce(Z_STEP_PIN);
     lastZStep = micros();
+  }
+}
+
+void runMotorE0() {
+  if (e0Cmd == 'H') return;
+
+  digitalWrite(E0_DIR_PIN, e0Cmd == 'F' ? HIGH : LOW);
+
+  if (micros() - lastE0Step >= (unsigned long)stepDelay) {
+    stepOnce(E0_STEP_PIN);
+    lastE0Step = micros();
   }
 }
 
